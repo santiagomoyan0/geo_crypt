@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
-import { decryptFile } from './encryption';
+import { decryptFile, isWithinAllowedArea } from './encryption';
 
 const API_URL = 'http://192.168.18.4:8088';
 
@@ -194,6 +194,17 @@ async function saveFile(uri: string, filename: string, mimetype: string): Promis
 export const downloadFile = async (fileId: number, geohash: string): Promise<string> => {
     try {
         console.log('📥 Descargando archivo...');
+        
+        // Obtener información del archivo primero
+        const fileInfo = await api.get(`files/${fileId}`);
+        const { filename, mimetype, geohash: originalGeohash } = fileInfo.data;
+        console.log('📋 Información del archivo:', { filename, mimetype, originalGeohash });
+
+        // Verificar si estamos en la ubicación permitida
+        if (!isWithinAllowedArea(geohash, originalGeohash)) {
+            throw new Error('No puedes descargar este archivo porque no te encuentras en la ubicación permitida. Debes estar dentro de un radio de 100 metros de donde se subió el archivo.');
+        }
+
         const response = await api.get(`files/${fileId}/download`, {
             params: { geohash },
             responseType: 'blob',
@@ -220,11 +231,6 @@ export const downloadFile = async (fileId: number, geohash: string): Promise<str
         await FileSystem.writeAsStringAsync(encryptedUri, base64, {
             encoding: FileSystem.EncodingType.Base64,
         });
-
-        // Obtener información del archivo
-        const fileInfo = await api.get(`files/${fileId}`);
-        const { filename, mimetype } = fileInfo.data;
-        console.log('📋 Información del archivo:', { filename, mimetype });
 
         // Desencriptar el archivo
         console.log('🔓 Iniciando desencriptación...');
