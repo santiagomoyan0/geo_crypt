@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import ngeohash from 'ngeohash';
 
-export const getGeohash = async (): Promise<string | null> => {
+export const getGeohash = async (precision: number = 7): Promise<string | null> => {
     try {
         console.log('📍 Obteniendo ubicación...');
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -16,7 +16,7 @@ export const getGeohash = async (): Promise<string | null> => {
         const { latitude, longitude } = location.coords;
         console.log('📍 Ubicación obtenida:', { latitude, longitude });
 
-        const geohash = ngeohash.encode(latitude, longitude);
+        const geohash = ngeohash.encode(latitude, longitude, precision);
         console.log('🔑 Geohash generado:', geohash);
 
         return geohash;

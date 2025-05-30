@@ -55,7 +55,6 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             console.log('🔑 Iniciando sesión...');
             await signIn({ username, password });
             console.log('✅ Sesión iniciada exitosamente');
-            navigation.replace('FileList');
         } catch (error) {
             console.error('❌ Error al iniciar sesión:', error);
             Alert.alert('Error', 'No se pudo iniciar sesión. Por favor, verifica tus credenciales.');

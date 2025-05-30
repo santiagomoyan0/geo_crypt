@@ -50,6 +50,12 @@ export const Navigation: React.FC = () => {
                             component={FileListScreen}
                             options={{
                                 title: 'Mis Archivos',
+                                headerStyle: {
+                                    backgroundColor: '#007AFF',
+                                },
+                                headerTitleStyle: {
+                                    fontSize: 18,
+                                },
                                 headerRight: () => (
                                     <TouchableOpacity
                                         onPress={signOut}

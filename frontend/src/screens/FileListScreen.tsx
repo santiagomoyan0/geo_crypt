@@ -79,6 +79,7 @@ export const FileListScreen: React.FC<Props> = ({ navigation }) => {
                 keyExtractor={(item) => item.id.toString()}
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
+                contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No hay archivos disponibles</Text>
@@ -108,6 +109,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f5f5f5',
     },
+    listContent: {
+        flexGrow: 1,
+        paddingBottom: 80, // Espacio para el botón de subir
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -135,6 +140,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
         color: '#333',
+        flex: 1,
+        marginRight: 10,
     },
     fileSize: {
         fontSize: 14,
