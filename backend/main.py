@@ -8,11 +8,28 @@ import shutil
 from datetime import timedelta
 import datetime
 from fastapi.responses import FileResponse
+import boto3
+from botocore.exceptions import ClientError
+import logging
+from dotenv import load_dotenv
 
 import models
 import schemas
 import auth
 from database import engine, get_db
+
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Cargar variables de entorno
+load_dotenv()
+logger.info("=== Verificando variables de entorno ===")
+logger.info(f"AWS_ACCESS_KEY_ID presente: {'Sí' if os.getenv('AWS_ACCESS_KEY_ID') else 'No'}")
+logger.info(f"AWS_SECRET_ACCESS_KEY presente: {'Sí' if os.getenv('AWS_SECRET_ACCESS_KEY') else 'No'}")
+logger.info(f"AWS_REGION presente: {'Sí' if os.getenv('AWS_REGION') else 'No'}")
+logger.info(f"S3_BUCKET_NAME presente: {'Sí' if os.getenv('S3_BUCKET_NAME') else 'No'}")
+logger.info("=====================================")
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -31,6 +48,53 @@ app.add_middleware(
 UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
+
+# Configurar S3
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
+BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+
+# Verificar variables de entorno de AWS
+if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME]):
+    logger.error("❌ Faltan variables de entorno necesarias para AWS S3")
+    logger.error("Por favor, asegúrate de tener configuradas las siguientes variables en tu archivo .env:")
+    logger.error("- AWS_ACCESS_KEY_ID")
+    logger.error("- AWS_SECRET_ACCESS_KEY")
+    logger.error("- S3_BUCKET_NAME")
+    logger.error("- AWS_REGION (opcional, por defecto: us-east-1)")
+else:
+    # Configurar cliente S3
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION
+    )
+
+# Verificar conexión con S3 al inicio
+@app.on_event("startup")
+async def startup_event():
+    if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, BUCKET_NAME]):
+        logger.error("❌ No se puede verificar la conexión con S3: faltan variables de entorno")
+        return
+
+    try:
+        # Intentar listar los objetos del bucket para verificar la conexión
+        s3_client.list_objects_v2(Bucket=BUCKET_NAME, MaxKeys=1)
+        logger.info("✅ Conexión exitosa con Amazon S3")
+        logger.info(f"Bucket configurado: {BUCKET_NAME}")
+        logger.info(f"Región AWS: {AWS_REGION}")
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        logger.error("❌ Error al conectar con Amazon S3")
+        logger.error(f"Código de error: {error_code}")
+        logger.error(f"Mensaje de error: {error_message}")
+        logger.error("Por favor, verifica tus credenciales de AWS y la configuración del bucket")
+    except Exception as e:
+        logger.error("❌ Error inesperado al conectar con Amazon S3")
+        logger.error(f"Error: {str(e)}")
 
 @app.get("/", tags=["Test"])
 async def root():
@@ -145,15 +209,35 @@ async def upload_file(
         file_location = os.path.join(UPLOAD_DIR, safe_filename)
         print(f"Ubicación del archivo: {file_location}")
         
-        # Guardar el archivo
+        # Guardar el archivo localmente
         print("Iniciando guardado del archivo...")
         with open(file_location, "wb+") as file_object:
             shutil.copyfileobj(file.file, file_object)
         print("Archivo guardado exitosamente")
         
-        # Crear el registro en la base de datos con el mismo nombre de archivo
+        # Subir el archivo a S3
+        try:
+            print("Iniciando subida a S3...")
+            # Crear la ruta en S3 usando solo el ID del usuario
+            s3_key = f"{current_user.id}/{safe_filename}"
+            
+            s3_client.upload_file(
+                file_location,
+                BUCKET_NAME,
+                s3_key,
+                ExtraArgs={'ContentType': file.content_type}
+            )
+            print(f"Archivo subido exitosamente a S3 en la ruta: {s3_key}")
+        except Exception as s3_error:
+            print(f"Error al subir a S3: {str(s3_error)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error uploading file to S3: {str(s3_error)}"
+            )
+        
+        # Crear el registro en la base de datos
         db_file = models.File(
-            filename=safe_filename,  # Usamos el mismo nombre que el archivo físico
+            filename=safe_filename,
             mimetype=file.content_type,
             size=os.path.getsize(file_location),
             geohash=geohash,
@@ -164,14 +248,19 @@ async def upload_file(
         db.refresh(db_file)
         print(f"Registro creado con ID: {db_file.id}")
         
+        # Limpiar el archivo local después de subirlo a S3
+        os.remove(file_location)
+        print("Archivo local eliminado")
+        
         response = {
             "status": "success",
-            "message": "File uploaded successfully",
+            "message": "File uploaded successfully to S3",
             "file": {
                 "id": db_file.id,
                 "filename": db_file.filename,
                 "size": db_file.size,
-                "geohash": db_file.geohash
+                "geohash": db_file.geohash,
+                "s3_path": s3_key
             }
         }
         print(f"Respuesta: {response}")
@@ -234,10 +323,17 @@ async def download_file(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    print(f"=== DESCARGAR ARCHIVO {file_id} ===")
+    print(f"\n=== DESCARGAR ARCHIVO {file_id} ===")
     print(f"Usuario: {current_user.username}")
     print(f"Geohash proporcionado: {geohash}")
     print(f"URL de la petición: {request.url}")
+    
+    # Verificar configuración de S3
+    print("\n=== Verificación de configuración S3 ===")
+    print(f"AWS_ACCESS_KEY_ID presente: {'Sí' if AWS_ACCESS_KEY_ID else 'No'}")
+    print(f"AWS_SECRET_ACCESS_KEY presente: {'Sí' if AWS_SECRET_ACCESS_KEY else 'No'}")
+    print(f"AWS_REGION: {AWS_REGION}")
+    print(f"BUCKET_NAME: {BUCKET_NAME}")
     
     file = db.query(models.File).filter(
         models.File.id == file_id,
@@ -245,28 +341,76 @@ async def download_file(
     ).first()
     
     if not file:
-        print(f"Error: Archivo {file_id} no encontrado")
+        print(f"Error: Archivo {file_id} no encontrado en la base de datos")
         raise HTTPException(status_code=404, detail="File not found")
     
+    print(f"\n=== Información del archivo ===")
+    print(f"ID: {file.id}")
+    print(f"Nombre: {file.filename}")
     print(f"Geohash almacenado: {file.geohash}")
+    print(f"Usuario ID: {file.user_id}")
+    
     if file.geohash != geohash:
         print(f"Error: Geohash inválido. Esperado: {file.geohash}, Recibido: {geohash}")
         raise HTTPException(status_code=403, detail="Invalid geohash")
     
-    # Usar el nombre exacto del archivo de la base de datos
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    print(f"Buscando archivo en: {file_path}")
-    
-    if not os.path.exists(file_path):
-        print(f"Error: Archivo físico no encontrado en {file_path}")
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    print(f"Archivo encontrado en: {file_path}")
-    return FileResponse(
-        path=file_path,
-        filename=file.filename,
-        media_type=file.mimetype
-    )
+    try:
+        # Construir la ruta del archivo en S3
+        s3_key = f"{current_user.id}/{file.filename}"
+        print(f"\n=== Búsqueda en S3 ===")
+        print(f"Buscando archivo en S3: {s3_key}")
+        print(f"Bucket: {BUCKET_NAME}")
+        
+        # Verificar si el archivo existe en S3
+        try:
+            print("Intentando verificar existencia del archivo en S3...")
+            s3_client.head_object(Bucket=BUCKET_NAME, Key=s3_key)
+            print(f"✅ Archivo encontrado en S3: {s3_key}")
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            error_message = e.response['Error']['Message']
+            print(f"❌ Error al verificar archivo en S3:")
+            print(f"Código de error: {error_code}")
+            print(f"Mensaje de error: {error_message}")
+            if error_code == '404':
+                print(f"❌ Archivo no encontrado en S3: {s3_key}")
+                raise HTTPException(status_code=404, detail="File not found in S3")
+            else:
+                print(f"❌ Error al verificar archivo en S3: {error_code}")
+                raise HTTPException(status_code=500, detail=f"Error checking file in S3: {error_code}")
+        
+        # Generar una URL firmada para descargar el archivo
+        print("\n=== Generando URL de descarga ===")
+        url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': BUCKET_NAME,
+                'Key': s3_key
+            },
+            ExpiresIn=3600  # URL válida por 1 hora
+        )
+        
+        print(f"✅ URL de descarga generada exitosamente")
+        return {"download_url": url}
+        
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        print(f"\n❌ Error al acceder al archivo en S3:")
+        print(f"Código de error: {error_code}")
+        print(f"Mensaje de error: {error_message}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error accessing file in S3: {error_message}"
+        )
+    except Exception as e:
+        print(f"\n❌ Error inesperado: {str(e)}")
+        import traceback
+        print(f"Traceback completo: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unexpected error: {str(e)}"
+        )
 
 @app.delete("/files/{file_id}")
 async def delete_file(

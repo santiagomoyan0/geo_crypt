@@ -7,7 +7,7 @@ import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { decryptFile, isWithinAllowedArea } from './encryption';
 
-const API_URL = 'http://192.168.18.4:8088';
+const API_URL = 'http://192.168.1.104:8088';
 
 const api = axios.create({
     baseURL: API_URL.replace(/\/$/, ''), // Elimina la barra final si existe
@@ -205,11 +205,16 @@ export const downloadFile = async (fileId: number, geohash: string): Promise<str
             throw new Error('No puedes descargar este archivo porque no te encuentras en la ubicación permitida. Debes estar dentro de un radio de 100 metros de donde se subió el archivo.');
         }
 
+        // Obtener URL firmada de S3
         const response = await api.get(`files/${fileId}/download`, {
-            params: { geohash },
-            responseType: 'blob',
+            params: { geohash }
         });
-        console.log('✅ Archivo descargado exitosamente');
+        console.log('✅ URL de descarga obtenida');
+
+        // Descargar el archivo desde S3
+        const s3Response = await fetch(response.data.download_url);
+        const blob = await s3Response.blob();
+        console.log('✅ Archivo descargado de S3');
 
         // Convertir el Blob a base64
         const reader = new FileReader();
@@ -219,7 +224,7 @@ export const downloadFile = async (fileId: number, geohash: string): Promise<str
                 resolve(base64.split(',')[1]);
             };
             reader.onerror = reject;
-            reader.readAsDataURL(response.data);
+            reader.readAsDataURL(blob);
         });
 
         const base64 = await base64Promise;
