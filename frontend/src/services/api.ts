@@ -191,7 +191,25 @@ async function saveFile(uri: string, filename: string, mimetype: string): Promis
     }
 }
 
-export const downloadFile = async (fileId: number, geohash: string): Promise<string> => {
+export const getFileOTP = async (fileId: number): Promise<string> => {
+    try {
+        console.log('🔑 Obteniendo OTP para archivo...', { fileId });
+        const response = await api.get(`files/${fileId}/otp`);
+        console.log('✅ OTP obtenido:', response.data);
+        return response.data.otp;
+    } catch (error) {
+        console.error('❌ Error al obtener OTP:', error);
+        if (axios.isAxiosError(error)) {
+            if (error.response?.status === 404) {
+                throw new Error(`No se encontró el archivo con ID ${fileId}. Es posible que el archivo haya sido eliminado o que el ID no sea correcto.`);
+            }
+            throw new Error(`Error al obtener OTP: ${error.response?.data?.detail || error.message}`);
+        }
+        throw error;
+    }
+};
+
+export const downloadFile = async (fileId: number, geohash: string, otp: string): Promise<string> => {
     try {
         console.log('📥 Descargando archivo...');
         
@@ -207,7 +225,7 @@ export const downloadFile = async (fileId: number, geohash: string): Promise<str
 
         // Obtener URL firmada de S3
         const response = await api.get(`files/${fileId}/download`, {
-            params: { geohash }
+            params: { geohash, otp }
         });
         console.log('✅ URL de descarga obtenida');
 

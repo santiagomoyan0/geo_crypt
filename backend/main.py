@@ -12,6 +12,7 @@ import boto3
 from botocore.exceptions import ClientError
 import logging
 from dotenv import load_dotenv
+import pyotp
 
 import models
 import schemas
@@ -187,7 +188,7 @@ async def read_users_me(current_user: models.User = Depends(auth.get_current_use
 @app.post("/files/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    geohash: str = Form(None),
+    geohash: str = Form(...),
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -198,6 +199,9 @@ async def upload_file(
     print(f"Geohash recibido: {geohash}")
     
     try:
+        # Generar secreto OTP único para este archivo
+        otp_secret = pyotp.random_base32()
+        
         # Asegurarse de que el directorio existe
         if not os.path.exists(UPLOAD_DIR):
             print(f"Creando directorio {UPLOAD_DIR}")
@@ -241,6 +245,7 @@ async def upload_file(
             mimetype=file.content_type,
             size=os.path.getsize(file_location),
             geohash=geohash,
+            otp_secret=otp_secret,
             user_id=current_user.id
         )
         db.add(db_file)
@@ -317,23 +322,16 @@ async def get_file(
 
 @app.get("/files/{file_id}/download")
 async def download_file(
-    request: Request,
     file_id: int,
     geohash: str,
+    otp: str,
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
     print(f"\n=== DESCARGAR ARCHIVO {file_id} ===")
     print(f"Usuario: {current_user.username}")
     print(f"Geohash proporcionado: {geohash}")
-    print(f"URL de la petición: {request.url}")
-    
-    # Verificar configuración de S3
-    print("\n=== Verificación de configuración S3 ===")
-    print(f"AWS_ACCESS_KEY_ID presente: {'Sí' if AWS_ACCESS_KEY_ID else 'No'}")
-    print(f"AWS_SECRET_ACCESS_KEY presente: {'Sí' if AWS_SECRET_ACCESS_KEY else 'No'}")
-    print(f"AWS_REGION: {AWS_REGION}")
-    print(f"BUCKET_NAME: {BUCKET_NAME}")
+    print(f"OTP proporcionado: {otp}")
     
     file = db.query(models.File).filter(
         models.File.id == file_id,
@@ -344,12 +342,13 @@ async def download_file(
         print(f"Error: Archivo {file_id} no encontrado en la base de datos")
         raise HTTPException(status_code=404, detail="File not found")
     
-    print(f"\n=== Información del archivo ===")
-    print(f"ID: {file.id}")
-    print(f"Nombre: {file.filename}")
-    print(f"Geohash almacenado: {file.geohash}")
-    print(f"Usuario ID: {file.user_id}")
+    # Verificar OTP
+    totp = pyotp.TOTP(file.otp_secret, interval=90)
+    if not totp.verify(otp):
+        print(f"Error: OTP inválido para archivo {file_id}")
+        raise HTTPException(status_code=401, detail="Invalid OTP")
     
+    # Verificar geohash
     if file.geohash != geohash:
         print(f"Error: Geohash inválido. Esperado: {file.geohash}, Recibido: {geohash}")
         raise HTTPException(status_code=403, detail="Invalid geohash")
@@ -411,6 +410,39 @@ async def download_file(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
         )
+
+@app.get("/files/{file_id}/otp")
+async def get_file_otp(
+    file_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    print(f"\n{'='*50}")
+    print(f"=== SOLICITUD DE OTP PARA ARCHIVO {file_id} ===")
+    print(f"Usuario: {current_user.username}")
+    
+    # Verificar si el archivo existe
+    file = db.query(models.File).filter(
+        models.File.id == file_id,
+        models.File.user_id == current_user.id
+    ).first()
+    
+    if not file:
+        print(f"Error: Archivo {file_id} no encontrado para el usuario {current_user.username}")
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    print(f"Archivo encontrado: {file.filename}")
+    print(f"Geohash: {file.geohash}")
+    
+    totp = pyotp.TOTP(file.otp_secret, interval=90)
+    otp = totp.now()
+    
+    print(f"\n{'='*50}")
+    print(f"OTP GENERADO: {otp}")
+    print(f"Este código es válido por 1.5 minutos")
+    print(f"{'='*50}\n")
+    
+    return {"otp": otp}
 
 @app.delete("/files/{file_id}")
 async def delete_file(

@@ -17,9 +17,11 @@ class File(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String)
+    s3_key = Column(String)
     mimetype = Column(String)
     size = Column(Integer)
     geohash = Column(String, nullable=True)
+    otp_secret = Column(String)
     user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -56,7 +56,9 @@ export const getGeohash = async (precision: number = 7): Promise<string | null> 
             return null;
         }
 
-        const location = await Location.getCurrentPositionAsync({});
+        const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+        });
         const { latitude, longitude } = location.coords;
         console.log('📍 Ubicación obtenida:', { latitude, longitude });
 

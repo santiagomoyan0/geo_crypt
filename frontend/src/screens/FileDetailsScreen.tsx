@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -13,10 +13,11 @@ import * as Crypto from 'expo-crypto';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import ngeohash from 'ngeohash';
-import { downloadFile, deleteFile } from '../services/api';
+import { downloadFile, deleteFile, getFileOTP } from '../services/api';
 import { File } from '../types';
 import { NavigationProp, FileDetailsRouteProp } from '../types/navigation';
 import { getGeohash, decryptFile } from '../services/encryption';
+import { OTPDialog } from '../components/OTPDialog';
 
 type Props = {
     navigation: NavigationProp;
@@ -26,53 +27,87 @@ type Props = {
 export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     const { file } = route.params;
     const [loading, setLoading] = useState(false);
+    const [currentGeohash, setCurrentGeohash] = useState<string>('');
+    const [otpDialogVisible, setOtpDialogVisible] = useState(false);
+    const [locationEnabled, setLocationEnabled] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        checkLocationServices();
+    }, []);
+
+    const checkLocationServices = async () => {
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            const enabled = await Location.hasServicesEnabledAsync();
+            setLocationEnabled(status === 'granted' && enabled);
+            
+            if (status === 'granted' && enabled) {
+                const geohash = await getGeohash();
+                if (geohash) {
+                    setCurrentGeohash(geohash);
+                }
+            }
+        } catch (error) {
+            console.error('Error al verificar servicios de ubicación:', error);
+            setLocationEnabled(false);
+        }
+    };
 
     const handleDownload = async () => {
-        try {
-            setLoading(true);
-            console.log('📥 Iniciando descarga del archivo:', file.filename);
-
-            // Obtener geohash
-            const geohash = await getGeohash();
-            if (!geohash) {
-                console.error('❌ No se pudo obtener el geohash');
-                Alert.alert('Error', 'No se pudo obtener la ubicación. Por favor, intenta nuevamente.');
+        if (!locationEnabled) {
+            const enabled = await Location.hasServicesEnabledAsync();
+            if (!enabled) {
+                Alert.alert(
+                    'Servicios de ubicación desactivados',
+                    'Por favor, activa los servicios de ubicación para continuar.',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => checkLocationServices()
+                        }
+                    ]
+                );
                 return;
             }
+            await checkLocationServices();
+            if (!locationEnabled) return;
+        }
 
-            // Descargar y guardar archivo
-            console.log('📥 Descargando archivo del servidor...');
-            const savedUri = await downloadFile(file.id, geohash);
-            console.log('✅ Archivo guardado en:', savedUri);
-
-            Alert.alert(
-                'Éxito',
-                'Archivo descargado y guardado correctamente',
-                [
-                    {
-                        text: 'Abrir',
-                        onPress: async () => {
-                            try {
-                                await Sharing.shareAsync(savedUri);
-                            } catch (error) {
-                                console.error('Error al abrir el archivo:', error);
-                                Alert.alert('Error', 'No se pudo abrir el archivo');
-                            }
-                        }
-                    },
-                    {
-                        text: 'OK',
-                        style: 'cancel'
-                    }
-                ]
-            );
-        } catch (error: any) {
-            console.error('❌ Error en el proceso de descarga:', error);
-            if (error.message === 'Guardado cancelado por el usuario') {
-                Alert.alert('Información', 'La descarga fue cancelada');
+        if (!currentGeohash) {
+            const geohash = await getGeohash();
+            if (geohash) {
+                setCurrentGeohash(geohash);
+                setOtpDialogVisible(true);
             } else {
-                Alert.alert('Error', 'No se pudo descargar el archivo. Por favor, intenta nuevamente.');
+                Alert.alert(
+                    'Error de ubicación',
+                    'No se pudo obtener la ubicación actual. Por favor, asegúrate de que los servicios de ubicación estén activados y vuelve a intentarlo.',
+                    [
+                        {
+                            text: 'Reintentar',
+                            onPress: () => checkLocationServices()
+                        },
+                        {
+                            text: 'Cancelar',
+                            style: 'cancel'
+                        }
+                    ]
+                );
             }
+            return;
+        }
+        setOtpDialogVisible(true);
+    };
+
+    const handleOTPConfirm = async (otp: string) => {
+        try {
+            setOtpDialogVisible(false);
+            setLoading(true);
+            const filePath = await downloadFile(file.id, currentGeohash, otp);
+            Alert.alert('Éxito', 'Archivo descargado correctamente');
+        } catch (error) {
+            console.error('Error al descargar archivo:', error);
+            Alert.alert('Error', 'No se pudo descargar el archivo');
         } finally {
             setLoading(false);
         }
@@ -83,16 +118,21 @@ export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
             setLoading(true);
             console.log('📤 Iniciando proceso de compartir archivo:', file.filename);
 
-            // Obtener geohash
-            const geohash = await getGeohash();
-            if (!geohash) {
-                console.error('❌ No se pudo obtener el geohash');
-                return;
+            if (!currentGeohash) {
+                const geohash = await getGeohash();
+                if (!geohash) {
+                    console.error('❌ No se pudo obtener el geohash');
+                    return;
+                }
+                setCurrentGeohash(geohash);
             }
 
+            // Obtener OTP
+            const otp = await getFileOTP(file.id);
+
             // Descargar y desencriptar archivo
-            const encryptedUri = await downloadFile(file.id, geohash);
-            const decryptedUri = await decryptFile(encryptedUri, geohash);
+            const encryptedUri = await downloadFile(file.id, currentGeohash, otp);
+            const decryptedUri = await decryptFile(encryptedUri, currentGeohash);
 
             // Compartir archivo
             await Share.share({
@@ -125,10 +165,10 @@ export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
         }
     };
 
-    const formatFileSize = (bytes: number) => {
-        if (bytes === 0) return '0 Bytes';
+    const formatFileSize = (bytes: number): string => {
+        if (bytes === 0) return '0 B';
         const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
@@ -136,7 +176,7 @@ export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Detalles del Archivo</Text>
-            <View style={styles.detailsContainer}>
+            <View style={styles.fileInfo}>
                 <Text style={styles.label}>Nombre:</Text>
                 <Text style={styles.value}>{file.filename}</Text>
                 
@@ -149,7 +189,7 @@ export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 
             <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                    style={[styles.button, styles.downloadButton, loading && styles.buttonDisabled]}
+                    style={[styles.button, loading && styles.buttonDisabled]}
                     onPress={handleDownload}
                     disabled={loading}
                 >
@@ -176,6 +216,13 @@ export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
                     <Text style={styles.buttonText}>Eliminar</Text>
                 </TouchableOpacity>
             </View>
+
+            <OTPDialog
+                visible={otpDialogVisible}
+                onClose={() => setOtpDialogVisible(false)}
+                onConfirm={handleOTPConfirm}
+                fileId={file.id}
+            />
         </View>
     );
 };
@@ -183,8 +230,8 @@ export const FileDetailsScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
         padding: 20,
+        backgroundColor: '#f5f5f5',
     },
     title: {
         fontSize: 24,
@@ -192,11 +239,19 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         textAlign: 'center',
     },
-    detailsContainer: {
+    fileInfo: {
         backgroundColor: 'white',
-        padding: 20,
+        padding: 15,
         borderRadius: 10,
         marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
     label: {
         fontSize: 16,
@@ -205,22 +260,21 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     value: {
-        fontSize: 18,
+        fontSize: 16,
+        color: '#333',
         marginBottom: 15,
     },
     buttonContainer: {
         gap: 10,
     },
     button: {
+        backgroundColor: '#007AFF',
         padding: 15,
         borderRadius: 5,
-        alignItems: 'center',
+        marginTop: 10,
     },
     buttonDisabled: {
         backgroundColor: '#999',
-    },
-    downloadButton: {
-        backgroundColor: '#007AFF',
     },
     shareButton: {
         backgroundColor: '#34C759',
@@ -230,7 +284,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: 'white',
+        textAlign: 'center',
         fontWeight: 'bold',
-        fontSize: 16,
     },
 }); 

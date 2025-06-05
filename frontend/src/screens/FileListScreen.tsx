@@ -9,8 +9,11 @@ import {
     Alert,
 } from 'react-native';
 import { NavigationProp } from '../types/navigation';
-import { getFiles } from '../services/api';
+import { getFiles, downloadFile, getFileOTP } from '../services/api';
 import { File } from '../types';
+import { OTPDialog } from '../components/OTPDialog';
+import * as Location from 'expo-location';
+import { getGeohash } from '../services/encryption';
 
 type Props = {
     navigation: NavigationProp;
@@ -20,10 +23,32 @@ export const FileListScreen: React.FC<Props> = ({ navigation }) => {
     const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [otpDialogVisible, setOtpDialogVisible] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [currentGeohash, setCurrentGeohash] = useState<string>('');
 
     useEffect(() => {
         loadFiles();
+        getCurrentLocation();
     }, []);
+
+    const getCurrentLocation = async () => {
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Error', 'Se requiere permiso de ubicación');
+                return;
+            }
+
+            const geohash = await getGeohash();
+            if (geohash) {
+                setCurrentGeohash(geohash);
+            }
+        } catch (error) {
+            console.error('Error al obtener ubicación:', error);
+            Alert.alert('Error', 'No se pudo obtener la ubicación');
+        }
+    };
 
     const loadFiles = async () => {
         try {
@@ -43,6 +68,29 @@ export const FileListScreen: React.FC<Props> = ({ navigation }) => {
     const handleRefresh = () => {
         setRefreshing(true);
         loadFiles();
+    };
+
+    const handleDownload = async (file: File) => {
+        if (!currentGeohash) {
+            // Intentar obtener la ubicación nuevamente
+            getCurrentLocation();
+            return;
+        }
+        setSelectedFile(file);
+        setOtpDialogVisible(true);
+    };
+
+    const handleOTPConfirm = async (otp: string) => {
+        if (!selectedFile) return;
+
+        try {
+            setOtpDialogVisible(false);
+            const filePath = await downloadFile(selectedFile.id, currentGeohash, otp);
+            Alert.alert('Éxito', 'Archivo descargado correctamente');
+        } catch (error) {
+            console.error('Error al descargar archivo:', error);
+            Alert.alert('Error', 'No se pudo descargar el archivo');
+        }
     };
 
     const handleFilePress = (file: File) => {
@@ -92,6 +140,12 @@ export const FileListScreen: React.FC<Props> = ({ navigation }) => {
             >
                 <Text style={styles.uploadButtonText}>Subir Archivo</Text>
             </TouchableOpacity>
+            <OTPDialog
+                visible={otpDialogVisible}
+                onClose={() => setOtpDialogVisible(false)}
+                onConfirm={handleOTPConfirm}
+                fileId={selectedFile?.id || 0}
+            />
         </View>
     );
 };
