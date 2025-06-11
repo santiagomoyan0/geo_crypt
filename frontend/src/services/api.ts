@@ -7,7 +7,7 @@ import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { decryptFile, isWithinAllowedArea } from './encryption';
 
-const API_URL = 'http://192.168.1.104:8088';
+const API_URL = 'http://192.168.100.116:8088';
 
 const api = axios.create({
     baseURL: API_URL.replace(/\/$/, ''), // Elimina la barra final si existe
