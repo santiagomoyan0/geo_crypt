@@ -161,26 +161,36 @@ export const getFile = async (fileId: number): Promise<File> => {
 
 async function saveFile(uri: string, filename: string, mimetype: string): Promise<string> {
     if (Platform.OS === "android") {
-        const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-        
-        if (permissions.granted) {
-            const base64 = await FileSystem.readAsStringAsync(uri, { 
-                encoding: FileSystem.EncodingType.Base64 
-            });
+        try {
+            const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+            
+            if (permissions.granted) {
+                const base64 = await FileSystem.readAsStringAsync(uri, { 
+                    encoding: FileSystem.EncodingType.Base64 
+                });
 
-            const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
-                permissions.directoryUri,
-                filename,
-                mimetype
-            );
+                // Ensure mimetype is not null and has a valid value
+                const validMimetype = mimetype || 'application/octet-stream';
 
-            await FileSystem.writeAsStringAsync(newUri, base64, { 
-                encoding: FileSystem.EncodingType.Base64 
-            });
+                const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+                    permissions.directoryUri,
+                    filename,
+                    validMimetype
+                );
 
-            return newUri;
-        } else {
-            // Si no se otorgan permisos, compartir el archivo
+                await FileSystem.writeAsStringAsync(newUri, base64, { 
+                    encoding: FileSystem.EncodingType.Base64 
+                });
+
+                return newUri;
+            } else {
+                // Si no se otorgan permisos, compartir el archivo
+                await Sharing.shareAsync(uri);
+                return uri;
+            }
+        } catch (error) {
+            console.error('Error al guardar archivo:', error);
+            // Si hay error al guardar, intentar compartir
             await Sharing.shareAsync(uri);
             return uri;
         }
@@ -191,20 +201,14 @@ async function saveFile(uri: string, filename: string, mimetype: string): Promis
     }
 }
 
-export const getFileOTP = async (fileId: number): Promise<string> => {
+export const getFileOTP = async (fileId: number): Promise<void> => {
     try {
-        console.log('🔑 Obteniendo OTP para archivo...', { fileId });
+        console.log('🔑 Solicitando envío de OTP por email...', { fileId });
         const response = await api.get(`files/${fileId}/otp`);
-        console.log('✅ OTP obtenido:', response.data);
-        return response.data.otp;
+        console.log('✅ Solicitud de OTP enviada:', response.data);
+        return response.data;
     } catch (error) {
-        console.error('❌ Error al obtener OTP:', error);
-        if (axios.isAxiosError(error)) {
-            if (error.response?.status === 404) {
-                throw new Error(`No se encontró el archivo con ID ${fileId}. Es posible que el archivo haya sido eliminado o que el ID no sea correcto.`);
-            }
-            throw new Error(`Error al obtener OTP: ${error.response?.data?.detail || error.message}`);
-        }
+        console.error('❌ Error al solicitar OTP:', error);
         throw error;
     }
 };
@@ -225,7 +229,7 @@ export const downloadFile = async (fileId: number, geohash: string, otp: string)
 
         // Obtener URL firmada de S3
         const response = await api.get(`files/${fileId}/download`, {
-            params: { geohash, otp }
+            params: { otp, geohash }
         });
         console.log('✅ URL de descarga obtenida');
 

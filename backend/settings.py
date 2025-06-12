@@ -5,6 +5,18 @@ from dotenv import load_dotenv
 # Cargar variables de entorno desde .env
 load_dotenv()
 
+# Configuración de Redis
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+# Configuración de Email
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USERNAME = os.getenv('EMAIL_USERNAME')
+EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
+EMAIL_FROM = os.getenv('EMAIL_FROM')
+
 # Configuración de S3
 try:
     s3 = boto3.client(
@@ -18,10 +30,9 @@ except Exception as e:
     print(f"Error al crear cliente S3: {str(e)}")
     raise
 
-BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
+BUCKET_NAME = os.getenv('AWS_BUCKET_NAME', 'geocrypt')
 if not BUCKET_NAME:
     print("ADVERTENCIA: AWS_BUCKET_NAME no está configurado en las variables de entorno")
-    BUCKET_NAME = "geocrypt-files"  # Valor por defecto para pruebas
     print(f"Usando bucket por defecto: {BUCKET_NAME}")
 
 # Verificar acceso a S3

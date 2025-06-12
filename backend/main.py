@@ -7,12 +7,14 @@ import os
 import shutil
 from datetime import timedelta
 import datetime
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 import boto3
 from botocore.exceptions import ClientError
 import logging
 from dotenv import load_dotenv
 import pyotp
+from email_service import send_otp_email
+from redis_service import redis_service
 
 import models
 import schemas
@@ -192,101 +194,58 @@ async def upload_file(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    print("=== INICIO DE SUBIDA DE ARCHIVO ===")
-    print(f"Usuario: {current_user.username}")
-    print(f"Nombre del archivo: {file.filename}")
-    print(f"Tipo de contenido: {file.content_type}")
-    print(f"Geohash recibido: {geohash}")
-    
+    logger.info("=== INICIO DE SUBIDA DE ARCHIVO ===")
     try:
-        # Generar secreto OTP único para este archivo
-        otp_secret = pyotp.random_base32()
+        # Crear directorio de uploads si no existe
+        os.makedirs("uploads", exist_ok=True)
         
-        # Asegurarse de que el directorio existe
-        if not os.path.exists(UPLOAD_DIR):
-            print(f"Creando directorio {UPLOAD_DIR}")
-            os.makedirs(UPLOAD_DIR)
-        
-        # Crear un nombre de archivo único
+        # Generar nombre único para el archivo
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_filename = f"{current_user.id}_{timestamp}_{file.filename}"
-        file_location = os.path.join(UPLOAD_DIR, safe_filename)
-        print(f"Ubicación del archivo: {file_location}")
+        unique_filename = f"{current_user.id}_{timestamp}_{file.filename}"
+        file_path = os.path.join("uploads", unique_filename)
         
-        # Guardar el archivo localmente
-        print("Iniciando guardado del archivo...")
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
-        print("Archivo guardado exitosamente")
+        logger.info(f"Iniciando guardado del archivo...")
+        # Guardar archivo localmente
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        logger.info("Archivo guardado exitosamente")
         
-        # Subir el archivo a S3
-        try:
-            print("Iniciando subida a S3...")
-            # Crear la ruta en S3 usando solo el ID del usuario
-            s3_key = f"{current_user.id}/{safe_filename}"
-            
-            s3_client.upload_file(
-                file_location,
-                BUCKET_NAME,
-                s3_key,
-                ExtraArgs={'ContentType': file.content_type}
-            )
-            print(f"Archivo subido exitosamente a S3 en la ruta: {s3_key}")
-        except Exception as s3_error:
-            print(f"Error al subir a S3: {str(s3_error)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error uploading file to S3: {str(s3_error)}"
-            )
+        # Subir a S3
+        logger.info("Iniciando subida a S3...")
+        s3_key = f"{current_user.id}/{unique_filename}"
+        s3_client.upload_file(file_path, BUCKET_NAME, s3_key, ExtraArgs={'ContentType': file.content_type})
+        logger.info(f"Archivo subido exitosamente a S3 en la ruta: {s3_key}")
         
-        # Crear el registro en la base de datos
+        # Crear registro en la base de datos
         db_file = models.File(
-            filename=safe_filename,
-            mimetype=file.content_type,
-            size=os.path.getsize(file_location),
+            filename=file.filename,
+            file_path=s3_key,
+            user_id=current_user.id,
             geohash=geohash,
-            otp_secret=otp_secret,
-            user_id=current_user.id
+            is_encrypted=True
         )
+        
         db.add(db_file)
         db.commit()
         db.refresh(db_file)
-        print(f"Registro creado con ID: {db_file.id}")
         
-        # Limpiar el archivo local después de subirlo a S3
-        os.remove(file_location)
-        print("Archivo local eliminado")
+        logger.info(f"Archivo registrado en la base de datos con ID: {db_file.id}")
         
-        response = {
-            "status": "success",
-            "message": "File uploaded successfully to S3",
-            "file": {
-                "id": db_file.id,
-                "filename": db_file.filename,
-                "size": db_file.size,
-                "geohash": db_file.geohash,
-                "s3_path": s3_key
-            }
-        }
-        print(f"Respuesta: {response}")
-        return response
+        # Limpiar archivo local
+        logger.info(f"Limpiando archivo: {file_path}")
+        os.remove(file_path)
+        
+        logger.info("=== FIN DE SUBIDA DE ARCHIVO ===")
+        return {"message": "File uploaded successfully", "file_id": db_file.id}
         
     except Exception as e:
-        print(f"ERROR: {str(e)}")
-        print(f"Tipo de error: {type(e)}")
-        import traceback
-        print(f"Traceback completo: {traceback.format_exc()}")
-        
-        # Si algo falla, intentar limpiar
-        if os.path.exists(file_location):
-            print(f"Limpiando archivo: {file_location}")
-            os.remove(file_location)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error uploading file: {str(e)}"
-        )
-    finally:
-        print("=== FIN DE SUBIDA DE ARCHIVO ===")
+        logger.error(f"Error al subir archivo: {str(e)}")
+        logger.error(f"Tipo de error: {type(e)}")
+        logger.error(f"Traceback completo: {traceback.format_exc()}")
+        # Limpiar archivo local si existe
+        if 'file_path' in locals() and os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
 
 @app.get("/files", response_model=List[schemas.File])
 async def list_files(
@@ -328,88 +287,90 @@ async def download_file(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    print(f"\n=== DESCARGAR ARCHIVO {file_id} ===")
-    print(f"Usuario: {current_user.username}")
-    print(f"Geohash proporcionado: {geohash}")
-    print(f"OTP proporcionado: {otp}")
-    
-    file = db.query(models.File).filter(
-        models.File.id == file_id,
-        models.File.user_id == current_user.id
-    ).first()
-    
-    if not file:
-        print(f"Error: Archivo {file_id} no encontrado en la base de datos")
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Verificar OTP
-    totp = pyotp.TOTP(file.otp_secret, interval=90)
-    if not totp.verify(otp):
-        print(f"Error: OTP inválido para archivo {file_id}")
-        raise HTTPException(status_code=401, detail="Invalid OTP")
-    
-    # Verificar geohash
-    if file.geohash != geohash:
-        print(f"Error: Geohash inválido. Esperado: {file.geohash}, Recibido: {geohash}")
-        raise HTTPException(status_code=403, detail="Invalid geohash")
+    logger.info("=== INICIO DE SOLICITUD DE DESCARGA ===")
+    logger.info(f"📁 ID del archivo: {file_id}")
+    logger.info(f"👤 Usuario: {current_user.username}")
+    logger.info(f"📍 Geohash recibido: {geohash}")
+    logger.info(f"🔑 OTP recibido: {otp}")
     
     try:
-        # Construir la ruta del archivo en S3
-        s3_key = f"{current_user.id}/{file.filename}"
-        print(f"\n=== Búsqueda en S3 ===")
-        print(f"Buscando archivo en S3: {s3_key}")
-        print(f"Bucket: {BUCKET_NAME}")
+        # Verificar que el archivo existe y pertenece al usuario
+        db_file = db.query(models.File).filter(models.File.id == file_id).first()
+        if not db_file:
+            logger.error(f"❌ Archivo {file_id} no encontrado")
+            raise HTTPException(status_code=404, detail="File not found")
         
-        # Verificar si el archivo existe en S3
+        if db_file.user_id != current_user.id:
+            logger.error(f"❌ Usuario {current_user.username} no tiene permiso para acceder al archivo {file_id}")
+            raise HTTPException(status_code=403, detail="Not authorized to access this file")
+        
+        # Verificar OTP en Redis
+        if not redis_service.verify_otp(file_id, otp):
+            logger.error("❌ OTP inválido o expirado")
+            raise HTTPException(status_code=401, detail="Invalid or expired OTP")
+        
+        logger.info("✅ OTP verificado correctamente")
+        
+        # Verificar geohash
+        if db_file.geohash != geohash:
+            logger.error(f"❌ Geohash inválido. Recibido: {geohash}, Esperado: {db_file.geohash}")
+            raise HTTPException(status_code=401, detail="Invalid geohash")
+        
+        logger.info("✅ Geohash verificado correctamente")
+        
+        # Verificar archivo en S3
+        logger.info("=== Búsqueda en S3 ===")
+        logger.info(f"Buscando archivo en S3: {db_file.file_path}")
+        logger.info(f"Bucket: {BUCKET_NAME}")
+        
         try:
-            print("Intentando verificar existencia del archivo en S3...")
-            s3_client.head_object(Bucket=BUCKET_NAME, Key=s3_key)
-            print(f"✅ Archivo encontrado en S3: {s3_key}")
+            logger.info("Intentando verificar existencia del archivo en S3...")
+            s3_client.head_object(Bucket=BUCKET_NAME, Key=db_file.file_path)
+            logger.info("✅ Archivo encontrado en S3")
         except ClientError as e:
             error_code = e.response['Error']['Code']
             error_message = e.response['Error']['Message']
-            print(f"❌ Error al verificar archivo en S3:")
-            print(f"Código de error: {error_code}")
-            print(f"Mensaje de error: {error_message}")
-            if error_code == '404':
-                print(f"❌ Archivo no encontrado en S3: {s3_key}")
-                raise HTTPException(status_code=404, detail="File not found in S3")
-            else:
-                print(f"❌ Error al verificar archivo en S3: {error_code}")
-                raise HTTPException(status_code=500, detail=f"Error checking file in S3: {error_code}")
+            logger.error(f"❌ Error al verificar archivo en S3:")
+            logger.error(f"Código de error: {error_code}")
+            logger.error(f"Mensaje de error: {error_message}")
+            logger.error(f"❌ Archivo no encontrado en S3: {db_file.file_path}")
+            raise HTTPException(status_code=404, detail=f"File not found in S3: {error_message}")
         
-        # Generar una URL firmada para descargar el archivo
-        print("\n=== Generando URL de descarga ===")
-        url = s3_client.generate_presigned_url(
-            'get_object',
-            Params={
-                'Bucket': BUCKET_NAME,
-                'Key': s3_key
-            },
-            ExpiresIn=3600  # URL válida por 1 hora
-        )
-        
-        print(f"✅ URL de descarga generada exitosamente")
-        return {"download_url": url}
-        
-    except ClientError as e:
-        error_code = e.response['Error']['Code']
-        error_message = e.response['Error']['Message']
-        print(f"\n❌ Error al acceder al archivo en S3:")
-        print(f"Código de error: {error_code}")
-        print(f"Mensaje de error: {error_message}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error accessing file in S3: {error_message}"
-        )
+        # Generar URL firmada para descarga
+        try:
+            logger.info("Generando URL firmada para descarga...")
+            url = s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': BUCKET_NAME,
+                    'Key': db_file.file_path,
+                    'ResponseContentDisposition': f'attachment; filename="{db_file.filename}"'
+                },
+                ExpiresIn=3600  # URL válida por 1 hora
+            )
+            logger.info("✅ URL firmada generada exitosamente")
+            
+            return {
+                "download_url": url,
+                "filename": db_file.filename
+            }
+            
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            error_message = e.response['Error']['Message']
+            logger.error(f"❌ Error al generar URL firmada:")
+            logger.error(f"Código de error: {error_code}")
+            logger.error(f"Mensaje de error: {error_message}")
+            raise HTTPException(status_code=500, detail=f"Error generating download URL: {error_message}")
+            
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"\n❌ Error inesperado: {str(e)}")
-        import traceback
-        print(f"Traceback completo: {traceback.format_exc()}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Unexpected error: {str(e)}"
-        )
+        logger.error(f"❌ Error inesperado: {str(e)}")
+        logger.error(f"Traceback completo: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        logger.info("=== FIN DE SOLICITUD DE DESCARGA ===")
 
 @app.get("/files/{file_id}/otp")
 async def get_file_otp(
@@ -417,32 +378,48 @@ async def get_file_otp(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db)
 ):
-    print(f"\n{'='*50}")
-    print(f"=== SOLICITUD DE OTP PARA ARCHIVO {file_id} ===")
-    print(f"Usuario: {current_user.username}")
+    logger.info("="*50)
+    logger.info(f"🚀 INICIO DE SOLICITUD DE OTP")
+    logger.info(f"📁 ID del archivo: {file_id}")
+    logger.info(f"👤 Usuario: {current_user.username}")
+    logger.info(f"📧 Email del usuario: {current_user.email}")
     
-    # Verificar si el archivo existe
-    file = db.query(models.File).filter(
-        models.File.id == file_id,
-        models.File.user_id == current_user.id
-    ).first()
-    
-    if not file:
-        print(f"Error: Archivo {file_id} no encontrado para el usuario {current_user.username}")
+    # Verificar que el archivo existe y pertenece al usuario
+    logger.info("🔍 Verificando existencia del archivo...")
+    db_file = db.query(models.File).filter(models.File.id == file_id).first()
+    if not db_file:
+        logger.error(f"❌ Archivo {file_id} no encontrado")
         raise HTTPException(status_code=404, detail="File not found")
+    logger.info(f"✅ Archivo encontrado: {db_file.filename}")
     
-    print(f"Archivo encontrado: {file.filename}")
-    print(f"Geohash: {file.geohash}")
+    if db_file.user_id != current_user.id:
+        logger.error(f"❌ Usuario {current_user.username} no tiene permiso para acceder al archivo {file_id}")
+        raise HTTPException(status_code=403, detail="Not authorized to access this file")
+    logger.info("✅ Permisos de usuario verificados")
     
-    totp = pyotp.TOTP(file.otp_secret, interval=90)
+    # Generar OTP
+    logger.info("🔑 Generando código OTP...")
+    totp = pyotp.TOTP(pyotp.random_base32())
     otp = totp.now()
+    logger.info(f"✅ OTP generado: {otp}")
     
-    print(f"\n{'='*50}")
-    print(f"OTP GENERADO: {otp}")
-    print(f"Este código es válido por 1.5 minutos")
-    print(f"{'='*50}\n")
+    # Almacenar OTP en Redis
+    if not redis_service.store_otp(file_id, otp):
+        logger.error("❌ Error al almacenar OTP en Redis")
+        raise HTTPException(status_code=500, detail="Failed to store OTP")
+    logger.info("✅ OTP almacenado en Redis")
     
-    return {"otp": otp}
+    # Enviar OTP por email
+    logger.info(f"📧 Iniciando envío de OTP por email a {current_user.email}")
+    email_sent = send_otp_email(current_user.email, otp)
+    
+    if not email_sent:
+        logger.error(f"❌ Falló el envío del email con el OTP a {current_user.email}")
+        raise HTTPException(status_code=500, detail="Failed to send OTP email")
+    
+    logger.info(f"✅ OTP enviado exitosamente a {current_user.email}")
+    logger.info("="*50)
+    return {"message": "OTP sent to your email"}
 
 @app.delete("/files/{file_id}")
 async def delete_file(

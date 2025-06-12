@@ -11,28 +11,41 @@ interface OTPDialogProps {
 
 export const OTPDialog: React.FC<OTPDialogProps> = ({ visible, onClose, onConfirm, fileId }) => {
     const [otp, setOtp] = useState('');
-    const [serverOtp, setServerOtp] = useState<string | null>(null);
     const [timeLeft, setTimeLeft] = useState(90);
+    const [emailSent, setEmailSent] = useState(false);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
-        if (visible) {
-            // Obtener OTP del servidor
+        if (visible && !emailSent) {
+            console.log('📧 Iniciando solicitud de OTP por email...');
+            // Solicitar envío de OTP por email
             getFileOTP(fileId)
-                .then(otp => {
-                    setServerOtp(otp);
+                .then(() => {
+                    console.log('✅ Solicitud de OTP enviada exitosamente');
+                    setEmailSent(true);
                     setTimeLeft(90);
+                    Alert.alert(
+                        'Código OTP enviado',
+                        'Se ha enviado un código OTP a tu correo electrónico. Por favor, revisa tu bandeja de entrada.'
+                    );
                 })
                 .catch(error => {
-                    console.error('Error al obtener OTP:', error);
-                    Alert.alert('Error', 'No se pudo obtener el código OTP');
+                    console.error('❌ Error al solicitar OTP:', error);
+                    console.error('Detalles del error:', {
+                        message: error.message,
+                        response: error.response?.data,
+                        status: error.response?.status
+                    });
+                    Alert.alert('Error', 'No se pudo enviar el código OTP por email');
                     onClose();
                 });
 
             // Iniciar temporizador
+            console.log('⏱️ Iniciando temporizador de 90 segundos');
             timer = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
+                        console.log('⏱️ Tiempo de OTP expirado');
                         clearInterval(timer);
                         return 0;
                     }
@@ -42,18 +55,29 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({ visible, onClose, onConfir
         }
 
         return () => {
-            if (timer) clearInterval(timer);
+            if (timer) {
+                console.log('🧹 Limpiando temporizador');
+                clearInterval(timer);
+            }
         };
-    }, [visible, fileId]);
+    }, [visible, fileId, emailSent]);
 
     const handleConfirm = () => {
         if (otp.length < 6) {
+            console.log('❌ OTP inválido: longitud insuficiente');
             Alert.alert('Error', 'El código OTP debe tener 6 dígitos');
             return;
         }
+        console.log('🔑 OTP ingresado:', otp);
+        console.log('✅ Confirmando OTP...');
         onConfirm(otp);
         setOtp('');
-        setServerOtp(null);
+        setEmailSent(false);
+    };
+
+    const handleOtpChange = (text: string) => {
+        console.log('📝 OTP ingresado:', text);
+        setOtp(text);
     };
 
     return (
@@ -69,17 +93,16 @@ export const OTPDialog: React.FC<OTPDialogProps> = ({ visible, onClose, onConfir
                     <Text style={styles.subtitle}>
                         El código OTP es válido por 1.5 minutos
                     </Text>
-                    {serverOtp && (
+                    {emailSent && (
                         <View style={styles.otpContainer}>
-                            <Text style={styles.otpLabel}>Código OTP:</Text>
-                            <Text style={styles.otpCode}>{serverOtp}</Text>
+                            <Text style={styles.otpLabel}>Código OTP enviado a tu email</Text>
                             <Text style={styles.timer}>Tiempo restante: {timeLeft}s</Text>
                         </View>
                     )}
                     <TextInput
                         style={styles.input}
                         value={otp}
-                        onChangeText={setOtp}
+                        onChangeText={handleOtpChange}
                         placeholder="Ingrese el código de 6 dígitos"
                         keyboardType="number-pad"
                         maxLength={6}
@@ -151,13 +174,6 @@ const styles = StyleSheet.create({
     otpLabel: {
         fontSize: 16,
         color: '#666',
-        marginBottom: 5,
-    },
-    otpCode: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#2196F3',
-        letterSpacing: 5,
         marginBottom: 5,
     },
     timer: {

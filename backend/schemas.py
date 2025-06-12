@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -11,16 +11,16 @@ class UserCreate(UserBase):
 
 class User(UserBase):
     id: int
-    files: List['File'] = []
+    is_active: bool
 
     class Config:
         from_attributes = True
 
 class FileBase(BaseModel):
     filename: str
-    mimetype: str
-    size: int
-    geohash: Optional[str] = None
+    file_path: str
+    geohash: str
+    is_encrypted: bool
 
 class FileCreate(FileBase):
     pass
@@ -36,7 +36,6 @@ class File(FileBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
-    user: User
 
 class LoginCredentials(BaseModel):
     username: str
