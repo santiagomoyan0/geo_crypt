@@ -23,4 +23,6 @@ class File(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     owner = relationship("User", back_populates="files")
     geohash = Column(String)
-    is_encrypted = Column(Boolean, default=False) 
+    is_encrypted = Column(Boolean, default=False)
+    size = Column(Integer)
+    mimetype = Column(String) 

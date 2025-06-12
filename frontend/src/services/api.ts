@@ -156,6 +156,7 @@ export const getFiles = async (): Promise<File[]> => {
 
 export const getFile = async (fileId: number): Promise<File> => {
     const response = await api.get(`files/${fileId}`);
+    console.log('✅ Archivo obtenido:', response.data);
     return response.data;
 };
 

@@ -9,7 +9,7 @@ import {
     Alert,
 } from 'react-native';
 import { NavigationProp } from '../types/navigation';
-import { getFiles, downloadFile, getFileOTP } from '../services/api';
+import { getFiles, downloadFile, getFileOTP, getFile } from '../services/api';
 import { File } from '../types';
 import { OTPDialog } from '../components/OTPDialog';
 import * as Location from 'expo-location';
@@ -93,8 +93,17 @@ export const FileListScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const handleFilePress = (file: File) => {
-        navigation.navigate('FileDetails', { file });
+    const handleFilePress = async (file: File) => {
+        try {
+            setLoading(true);
+            const completeFile = await getFile(file.id);
+            navigation.navigate('FileDetails', { file: completeFile });
+        } catch (error) {
+            console.error('Error al obtener detalles del archivo:', error);
+            Alert.alert('Error', 'No se pudieron cargar los detalles del archivo');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderItem = ({ item }: { item: File }) => (

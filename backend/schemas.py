@@ -21,6 +21,8 @@ class FileBase(BaseModel):
     file_path: str
     geohash: str
     is_encrypted: bool
+    size: int
+    mimetype: str
 
 class FileCreate(FileBase):
     pass

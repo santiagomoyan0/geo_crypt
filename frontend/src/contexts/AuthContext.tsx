@@ -41,7 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('🔑 Iniciando sesión...');
             const response = await login(credentials.username, credentials.password);
             await AsyncStorage.setItem('token', response.access_token);
-            setUser(response.user);
+            
+            // Fetch user data after successful login
+            const userData = await getUserInfo();
+            setUser(userData);
+            
             console.log('✅ Sesión iniciada exitosamente');
         } catch (error) {
             console.error('❌ Error al iniciar sesión:', error);

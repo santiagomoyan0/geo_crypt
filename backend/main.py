@@ -210,6 +210,9 @@ async def upload_file(
             shutil.copyfileobj(file.file, buffer)
         logger.info("Archivo guardado exitosamente")
         
+        # Obtener tamaño del archivo
+        file_size = os.path.getsize(file_path)
+        
         # Subir a S3
         logger.info("Iniciando subida a S3...")
         s3_key = f"{current_user.id}/{unique_filename}"
@@ -221,8 +224,10 @@ async def upload_file(
             filename=file.filename,
             file_path=s3_key,
             user_id=current_user.id,
-            geohash=geohash,
-            is_encrypted=True
+            geohash=geohash,  # Guardamos el geohash original
+            is_encrypted=True,
+            size=file_size,
+            mimetype=file.content_type
         )
         
         db.add(db_file)
