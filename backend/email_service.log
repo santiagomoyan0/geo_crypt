@@ -934,3 +934,352 @@
 2025-06-12 13:58:49,151 - main - INFO - Generando URL firmada para descarga...
 2025-06-12 13:58:49,154 - main - INFO - ✅ URL firmada generada exitosamente
 2025-06-12 13:58:49,155 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===
+2025-06-13 11:14:25,300 - redis_service - INFO - ✅ Conexión a Redis establecida
+2025-06-13 11:14:25,459 - main - INFO - === Verificando variables de entorno ===
+2025-06-13 11:14:25,459 - main - INFO - AWS_ACCESS_KEY_ID presente: Sí
+2025-06-13 11:14:25,459 - main - INFO - AWS_SECRET_ACCESS_KEY presente: Sí
+2025-06-13 11:14:25,459 - main - INFO - AWS_REGION presente: Sí
+2025-06-13 11:14:25,459 - main - INFO - S3_BUCKET_NAME presente: Sí
+2025-06-13 11:14:25,459 - main - INFO - =====================================
+2025-06-13 11:14:25,758 - main - INFO - ✅ Conexión exitosa con Amazon S3
+2025-06-13 11:14:25,758 - main - INFO - Bucket configurado: geocrypt
+2025-06-13 11:14:25,758 - main - INFO - Región AWS: sa-east-1
+2025-06-13 11:30:15,450 - main - INFO - === INICIO DE SUBIDA DE ARCHIVO ===
+2025-06-13 11:30:15,450 - main - INFO - Iniciando guardado del archivo...
+2025-06-13 11:30:15,451 - main - INFO - Archivo guardado exitosamente
+2025-06-13 11:30:15,452 - main - INFO - Iniciando subida a S3...
+2025-06-13 11:30:16,297 - main - INFO - Archivo subido exitosamente a S3 en la ruta: 1/1_20250613_113015_encrypted_573%20-%20TOLEDANO.pdf
+2025-06-13 11:30:16,510 - main - INFO - Archivo registrado en la base de datos con ID: 3
+2025-06-13 11:30:16,510 - main - INFO - Limpiando archivo: uploads/1_20250613_113015_encrypted_573%20-%20TOLEDANO.pdf
+2025-06-13 11:30:16,511 - main - INFO - === FIN DE SUBIDA DE ARCHIVO ===
+2025-06-13 11:31:39,756 - main - INFO - ==================================================
+2025-06-13 11:31:39,789 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 11:31:39,789 - main - INFO - 📁 ID del archivo: 3
+2025-06-13 11:31:39,789 - main - INFO - 👤 Usuario: santi
+2025-06-13 11:31:39,790 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 11:31:39,790 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 11:31:39,808 - main - INFO - ✅ Archivo encontrado: encrypted_573%20-%20TOLEDANO.pdf
+2025-06-13 11:31:39,808 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 11:31:39,808 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 11:31:39,809 - main - INFO - ✅ OTP generado: 027965
+2025-06-13 11:31:39,810 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 3
+2025-06-13 11:31:39,810 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 11:31:39,810 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 11:31:39,810 - email_service - INFO - ==================================================
+2025-06-13 11:31:39,811 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 11:31:39,811 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 11:31:39,811 - email_service - INFO - 🔑 OTP a enviar: 027965
+2025-06-13 11:31:39,811 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 11:31:39,811 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 11:31:39,812 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 11:31:39,812 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 11:31:40,735 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 11:31:40,736 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 11:31:40,736 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 11:31:41,430 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 11:31:41,433 - email_service - INFO - 📤 Enviando email...
+2025-06-13 11:31:42,743 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 11:31:42,920 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 11:31:42,920 - email_service - INFO - ==================================================
+2025-06-13 11:31:42,921 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 11:31:42,921 - main - INFO - ==================================================
+2025-06-13 11:32:13,882 - main - INFO - === INICIO DE SOLICITUD DE DESCARGA ===
+2025-06-13 11:32:13,882 - main - INFO - 📁 ID del archivo: 3
+2025-06-13 11:32:13,882 - main - INFO - 👤 Usuario: santi
+2025-06-13 11:32:13,882 - main - INFO - 📍 Geohash recibido: 63z7jt9
+2025-06-13 11:32:13,883 - main - INFO - 🔑 OTP recibido: 027665
+2025-06-13 11:32:13,885 - redis_service - ERROR - ❌ OTP inválido para archivo 3
+2025-06-13 11:32:13,885 - main - ERROR - ❌ OTP inválido o expirado
+2025-06-13 11:32:13,885 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===
+2025-06-13 11:32:25,336 - main - INFO - ==================================================
+2025-06-13 11:32:25,336 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 11:32:25,336 - main - INFO - 📁 ID del archivo: 3
+2025-06-13 11:32:25,337 - main - INFO - 👤 Usuario: santi
+2025-06-13 11:32:25,337 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 11:32:25,337 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 11:32:25,338 - main - INFO - ✅ Archivo encontrado: encrypted_573%20-%20TOLEDANO.pdf
+2025-06-13 11:32:25,338 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 11:32:25,338 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 11:32:25,339 - main - INFO - ✅ OTP generado: 630878
+2025-06-13 11:32:25,339 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 3
+2025-06-13 11:32:25,340 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 11:32:25,340 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 11:32:25,340 - email_service - INFO - ==================================================
+2025-06-13 11:32:25,340 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 11:32:25,340 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 11:32:25,340 - email_service - INFO - 🔑 OTP a enviar: 630878
+2025-06-13 11:32:25,340 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 11:32:25,340 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 11:32:25,341 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 11:32:25,341 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 11:32:26,080 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 11:32:26,080 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 11:32:26,080 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 11:32:26,644 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 11:32:26,647 - email_service - INFO - 📤 Enviando email...
+2025-06-13 11:32:28,119 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 11:32:28,307 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 11:32:28,307 - email_service - INFO - ==================================================
+2025-06-13 11:32:28,308 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 11:32:28,308 - main - INFO - ==================================================
+2025-06-13 11:32:57,362 - main - INFO - === INICIO DE SOLICITUD DE DESCARGA ===
+2025-06-13 11:32:57,362 - main - INFO - 📁 ID del archivo: 3
+2025-06-13 11:32:57,362 - main - INFO - 👤 Usuario: santi
+2025-06-13 11:32:57,362 - main - INFO - 📍 Geohash recibido: 63z7jt9
+2025-06-13 11:32:57,362 - main - INFO - 🔑 OTP recibido: 630878
+2025-06-13 11:32:57,364 - redis_service - INFO - ✅ OTP verificado y eliminado para archivo 3
+2025-06-13 11:32:57,364 - main - INFO - ✅ OTP verificado correctamente
+2025-06-13 11:32:57,365 - main - INFO - ✅ Geohash verificado correctamente
+2025-06-13 11:32:57,365 - main - INFO - === Búsqueda en S3 ===
+2025-06-13 11:32:57,365 - main - INFO - Buscando archivo en S3: 1/1_20250613_113015_encrypted_573%20-%20TOLEDANO.pdf
+2025-06-13 11:32:57,365 - main - INFO - Bucket: geocrypt
+2025-06-13 11:32:57,365 - main - INFO - Intentando verificar existencia del archivo en S3...
+2025-06-13 11:32:57,681 - main - INFO - ✅ Archivo encontrado en S3
+2025-06-13 11:32:57,682 - main - INFO - Generando URL firmada para descarga...
+2025-06-13 11:32:57,684 - main - INFO - ✅ URL firmada generada exitosamente
+2025-06-13 11:32:57,685 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===
+2025-06-13 11:34:34,340 - main - INFO - ==================================================
+2025-06-13 11:34:34,340 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 11:34:34,340 - main - INFO - 📁 ID del archivo: 2
+2025-06-13 11:34:34,341 - main - INFO - 👤 Usuario: santi
+2025-06-13 11:34:34,341 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 11:34:34,341 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 11:34:34,342 - main - INFO - ✅ Archivo encontrado: encrypted__tmp_chequera-41004418-1-102-1443.pdf
+2025-06-13 11:34:34,342 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 11:34:34,342 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 11:34:34,342 - main - INFO - ✅ OTP generado: 596547
+2025-06-13 11:34:34,343 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 2
+2025-06-13 11:34:34,344 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 11:34:34,344 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 11:34:34,344 - email_service - INFO - ==================================================
+2025-06-13 11:34:34,344 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 11:34:34,344 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 11:34:34,344 - email_service - INFO - 🔑 OTP a enviar: 596547
+2025-06-13 11:34:34,344 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 11:34:34,345 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 11:34:34,345 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 11:34:34,345 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 11:34:35,206 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 11:34:35,206 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 11:34:35,206 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 11:34:35,740 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 11:34:35,743 - email_service - INFO - 📤 Enviando email...
+2025-06-13 11:34:38,126 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 11:34:38,331 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 11:34:38,331 - email_service - INFO - ==================================================
+2025-06-13 11:34:38,332 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 11:34:38,332 - main - INFO - ==================================================
+2025-06-13 17:52:46,811 - redis_service - INFO - ✅ Conexión a Redis establecida
+2025-06-13 17:52:47,722 - main - INFO - === Verificando variables de entorno ===
+2025-06-13 17:52:47,722 - main - INFO - AWS_ACCESS_KEY_ID presente: Sí
+2025-06-13 17:52:47,723 - main - INFO - AWS_SECRET_ACCESS_KEY presente: Sí
+2025-06-13 17:52:47,723 - main - INFO - AWS_REGION presente: Sí
+2025-06-13 17:52:47,723 - main - INFO - S3_BUCKET_NAME presente: Sí
+2025-06-13 17:52:47,723 - main - INFO - =====================================
+2025-06-13 17:52:48,036 - main - INFO - ✅ Conexión exitosa con Amazon S3
+2025-06-13 17:52:48,037 - main - INFO - Bucket configurado: geocrypt
+2025-06-13 17:52:48,037 - main - INFO - Región AWS: sa-east-1
+2025-06-13 17:57:56,273 - main - INFO - === INICIO DE SUBIDA DE ARCHIVO ===
+2025-06-13 17:57:56,273 - main - INFO - Iniciando guardado del archivo...
+2025-06-13 17:57:56,274 - main - INFO - Archivo guardado exitosamente
+2025-06-13 17:57:56,274 - main - INFO - Iniciando subida a S3...
+2025-06-13 17:57:56,964 - main - INFO - Archivo subido exitosamente a S3 en la ruta: 1/1_20250613_175756_encrypted_Comprobante__1691160350088%20(1).pdf
+2025-06-13 17:57:57,076 - main - INFO - Archivo registrado en la base de datos con ID: 4
+2025-06-13 17:57:57,076 - main - INFO - Limpiando archivo: uploads/1_20250613_175756_encrypted_Comprobante__1691160350088%20(1).pdf
+2025-06-13 17:57:57,077 - main - INFO - === FIN DE SUBIDA DE ARCHIVO ===
+2025-06-13 17:58:25,521 - main - INFO - ==================================================
+2025-06-13 17:58:25,521 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 17:58:25,521 - main - INFO - 📁 ID del archivo: 4
+2025-06-13 17:58:25,521 - main - INFO - 👤 Usuario: santi
+2025-06-13 17:58:25,521 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 17:58:25,521 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 17:58:25,525 - main - INFO - ✅ Archivo encontrado: encrypted_Comprobante__1691160350088%20(1).pdf
+2025-06-13 17:58:25,525 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 17:58:25,525 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 17:58:25,526 - main - INFO - ✅ OTP generado: 517910
+2025-06-13 17:58:25,526 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 4
+2025-06-13 17:58:25,527 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 17:58:25,527 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 17:58:25,527 - email_service - INFO - ==================================================
+2025-06-13 17:58:25,527 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 17:58:25,527 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 17:58:25,527 - email_service - INFO - 🔑 OTP a enviar: 517910
+2025-06-13 17:58:25,527 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 17:58:25,527 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 17:58:25,528 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 17:58:25,528 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 17:58:27,143 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 17:58:27,144 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 17:58:27,144 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 17:58:27,700 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 17:58:27,703 - email_service - INFO - 📤 Enviando email...
+2025-06-13 17:58:29,268 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 17:58:29,471 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 17:58:29,471 - email_service - INFO - ==================================================
+2025-06-13 17:58:29,472 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 17:58:29,472 - main - INFO - ==================================================
+2025-06-13 17:59:04,962 - main - INFO - === INICIO DE SOLICITUD DE DESCARGA ===
+2025-06-13 17:59:04,963 - main - INFO - 📁 ID del archivo: 4
+2025-06-13 17:59:04,963 - main - INFO - 👤 Usuario: santi
+2025-06-13 17:59:04,963 - main - INFO - 📍 Geohash recibido: 63z7jt9
+2025-06-13 17:59:04,963 - main - INFO - 🔑 OTP recibido: 517910
+2025-06-13 17:59:04,966 - redis_service - INFO - ✅ OTP verificado y eliminado para archivo 4
+2025-06-13 17:59:04,966 - main - INFO - ✅ OTP verificado correctamente
+2025-06-13 17:59:04,966 - main - INFO - ✅ Geohash verificado correctamente
+2025-06-13 17:59:04,966 - main - INFO - === Búsqueda en S3 ===
+2025-06-13 17:59:04,966 - main - INFO - Buscando archivo en S3: 1/1_20250613_175756_encrypted_Comprobante__1691160350088%20(1).pdf
+2025-06-13 17:59:04,966 - main - INFO - Bucket: geocrypt
+2025-06-13 17:59:04,967 - main - INFO - Intentando verificar existencia del archivo en S3...
+2025-06-13 17:59:05,295 - main - INFO - ✅ Archivo encontrado en S3
+2025-06-13 17:59:05,295 - main - INFO - Generando URL firmada para descarga...
+2025-06-13 17:59:05,300 - main - INFO - ✅ URL firmada generada exitosamente
+2025-06-13 17:59:05,301 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===
+2025-06-13 19:32:43,605 - main - INFO - === INICIO DE SUBIDA DE ARCHIVO ===
+2025-06-13 19:32:43,606 - main - INFO - Iniciando guardado del archivo...
+2025-06-13 19:32:43,607 - main - INFO - Archivo guardado exitosamente
+2025-06-13 19:32:43,607 - main - INFO - Iniciando subida a S3...
+2025-06-13 19:32:44,458 - main - INFO - Archivo subido exitosamente a S3 en la ruta: 1/1_20250613_193243_encrypted__tmp_chequera-41004418-1-609-63%20(1).pdf
+2025-06-13 19:32:44,563 - main - INFO - Archivo registrado en la base de datos con ID: 5
+2025-06-13 19:32:44,563 - main - INFO - Limpiando archivo: uploads/1_20250613_193243_encrypted__tmp_chequera-41004418-1-609-63%20(1).pdf
+2025-06-13 19:32:44,563 - main - INFO - === FIN DE SUBIDA DE ARCHIVO ===
+2025-06-13 19:33:12,837 - main - INFO - ==================================================
+2025-06-13 19:33:12,838 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 19:33:12,839 - main - INFO - 📁 ID del archivo: 5
+2025-06-13 19:33:12,839 - main - INFO - 👤 Usuario: santi
+2025-06-13 19:33:12,839 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:12,840 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 19:33:12,841 - main - INFO - ✅ Archivo encontrado: encrypted__tmp_chequera-41004418-1-609-63%20(1).pdf
+2025-06-13 19:33:12,841 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 19:33:12,842 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 19:33:12,842 - main - INFO - ✅ OTP generado: 015813
+2025-06-13 19:33:12,844 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 5
+2025-06-13 19:33:12,844 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 19:33:12,844 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:12,845 - email_service - INFO - ==================================================
+2025-06-13 19:33:12,845 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 19:33:12,845 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:12,845 - email_service - INFO - 🔑 OTP a enviar: 015813
+2025-06-13 19:33:12,846 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 19:33:12,846 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 19:33:12,846 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 19:33:12,847 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 19:33:13,745 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 19:33:13,745 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 19:33:13,746 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 19:33:14,249 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 19:33:14,252 - email_service - INFO - 📤 Enviando email...
+2025-06-13 19:33:15,832 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 19:33:16,014 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 19:33:16,014 - email_service - INFO - ==================================================
+2025-06-13 19:33:16,014 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:16,015 - main - INFO - ==================================================
+2025-06-13 19:33:37,156 - main - INFO - === INICIO DE SOLICITUD DE DESCARGA ===
+2025-06-13 19:33:37,157 - main - INFO - 📁 ID del archivo: 5
+2025-06-13 19:33:37,157 - main - INFO - 👤 Usuario: santi
+2025-06-13 19:33:37,158 - main - INFO - 📍 Geohash recibido: 63z7jt9
+2025-06-13 19:33:37,158 - main - INFO - 🔑 OTP recibido: 517910
+2025-06-13 19:33:37,161 - redis_service - ERROR - ❌ OTP inválido para archivo 5
+2025-06-13 19:33:37,162 - main - ERROR - ❌ OTP inválido o expirado
+2025-06-13 19:33:37,162 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===
+2025-06-13 19:33:58,721 - main - INFO - ==================================================
+2025-06-13 19:33:58,721 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 19:33:58,721 - main - INFO - 📁 ID del archivo: 5
+2025-06-13 19:33:58,721 - main - INFO - 👤 Usuario: santi
+2025-06-13 19:33:58,721 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:58,721 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 19:33:58,723 - main - INFO - ✅ Archivo encontrado: encrypted__tmp_chequera-41004418-1-609-63%20(1).pdf
+2025-06-13 19:33:58,724 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 19:33:58,724 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 19:33:58,725 - main - INFO - ✅ OTP generado: 025659
+2025-06-13 19:33:58,727 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 5
+2025-06-13 19:33:58,728 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 19:33:58,728 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:58,728 - email_service - INFO - ==================================================
+2025-06-13 19:33:58,728 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 19:33:58,729 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 19:33:58,729 - email_service - INFO - 🔑 OTP a enviar: 025659
+2025-06-13 19:33:58,730 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 19:33:58,730 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 19:33:58,731 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 19:33:58,731 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 19:34:00,064 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 19:34:00,064 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 19:34:00,065 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 19:34:00,591 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 19:34:00,593 - email_service - INFO - 📤 Enviando email...
+2025-06-13 19:34:01,933 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 19:34:02,118 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 19:34:02,118 - email_service - INFO - ==================================================
+2025-06-13 19:34:02,119 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 19:34:02,119 - main - INFO - ==================================================
+2025-06-13 19:34:18,706 - main - INFO - === INICIO DE SOLICITUD DE DESCARGA ===
+2025-06-13 19:34:18,707 - main - INFO - 📁 ID del archivo: 5
+2025-06-13 19:34:18,707 - main - INFO - 👤 Usuario: santi
+2025-06-13 19:34:18,707 - main - INFO - 📍 Geohash recibido: 63z7jt9
+2025-06-13 19:34:18,707 - main - INFO - 🔑 OTP recibido: 025659
+2025-06-13 19:34:18,710 - redis_service - INFO - ✅ OTP verificado y eliminado para archivo 5
+2025-06-13 19:34:18,710 - main - INFO - ✅ OTP verificado correctamente
+2025-06-13 19:34:18,711 - main - INFO - ✅ Geohash verificado correctamente
+2025-06-13 19:34:18,711 - main - INFO - === Búsqueda en S3 ===
+2025-06-13 19:34:18,711 - main - INFO - Buscando archivo en S3: 1/1_20250613_193243_encrypted__tmp_chequera-41004418-1-609-63%20(1).pdf
+2025-06-13 19:34:18,711 - main - INFO - Bucket: geocrypt
+2025-06-13 19:34:18,711 - main - INFO - Intentando verificar existencia del archivo en S3...
+2025-06-13 19:34:19,047 - main - INFO - ✅ Archivo encontrado en S3
+2025-06-13 19:34:19,048 - main - INFO - Generando URL firmada para descarga...
+2025-06-13 19:34:19,050 - main - INFO - ✅ URL firmada generada exitosamente
+2025-06-13 19:34:19,050 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===
+2025-06-13 20:04:13,759 - main - INFO - === INICIO DE SUBIDA DE ARCHIVO ===
+2025-06-13 20:04:13,760 - main - INFO - Iniciando guardado del archivo...
+2025-06-13 20:04:13,760 - main - INFO - Archivo guardado exitosamente
+2025-06-13 20:04:13,760 - main - INFO - Iniciando subida a S3...
+2025-06-13 20:04:14,605 - main - INFO - Archivo subido exitosamente a S3 en la ruta: 1/1_20250613_200413_encrypted__tmp_chequera-41004418-1-102-1443.pdf
+2025-06-13 20:04:14,720 - main - INFO - Archivo registrado en la base de datos con ID: 6
+2025-06-13 20:04:14,720 - main - INFO - Limpiando archivo: uploads/1_20250613_200413_encrypted__tmp_chequera-41004418-1-102-1443.pdf
+2025-06-13 20:04:14,721 - main - INFO - === FIN DE SUBIDA DE ARCHIVO ===
+2025-06-13 20:04:42,901 - main - INFO - ==================================================
+2025-06-13 20:04:42,901 - main - INFO - 🚀 INICIO DE SOLICITUD DE OTP
+2025-06-13 20:04:42,902 - main - INFO - 📁 ID del archivo: 6
+2025-06-13 20:04:42,902 - main - INFO - 👤 Usuario: santi
+2025-06-13 20:04:42,902 - main - INFO - 📧 Email del usuario: s.moyano@alumno.um.edu.ar
+2025-06-13 20:04:42,902 - main - INFO - 🔍 Verificando existencia del archivo...
+2025-06-13 20:04:42,904 - main - INFO - ✅ Archivo encontrado: encrypted__tmp_chequera-41004418-1-102-1443.pdf
+2025-06-13 20:04:42,904 - main - INFO - ✅ Permisos de usuario verificados
+2025-06-13 20:04:42,905 - main - INFO - 🔑 Generando código OTP...
+2025-06-13 20:04:42,905 - main - INFO - ✅ OTP generado: 805354
+2025-06-13 20:04:42,907 - redis_service - INFO - ✅ OTP almacenado en Redis para archivo 6
+2025-06-13 20:04:42,907 - main - INFO - ✅ OTP almacenado en Redis
+2025-06-13 20:04:42,907 - main - INFO - 📧 Iniciando envío de OTP por email a s.moyano@alumno.um.edu.ar
+2025-06-13 20:04:42,908 - email_service - INFO - ==================================================
+2025-06-13 20:04:42,908 - email_service - INFO - 🚀 INICIO DE ENVÍO DE EMAIL OTP
+2025-06-13 20:04:42,908 - email_service - INFO - 📧 Destinatario: s.moyano@alumno.um.edu.ar
+2025-06-13 20:04:42,908 - email_service - INFO - 🔑 OTP a enviar: 805354
+2025-06-13 20:04:42,908 - email_service - INFO - 📤 Remitente: Geocrypt (No reply) <admin@geocrypt.com>
+2025-06-13 20:04:42,909 - email_service - INFO - 🌐 Servidor SMTP: smtp.gmail.com:587
+2025-06-13 20:04:42,909 - email_service - INFO - ✅ Email preparado correctamente
+2025-06-13 20:04:42,910 - email_service - INFO - 📧 Conectando al servidor SMTP smtp.gmail.com:587
+2025-06-13 20:04:43,756 - email_service - INFO - ✅ Conexión TLS establecida
+2025-06-13 20:04:43,756 - email_service - INFO - 🔑 Iniciando autenticación SMTP
+2025-06-13 20:04:43,756 - email_service - INFO - 👤 Usuario SMTP: santiago98moy@gmail.com
+2025-06-13 20:04:44,268 - email_service - INFO - ✅ Autenticación SMTP exitosa
+2025-06-13 20:04:44,269 - email_service - INFO - 📤 Enviando email...
+2025-06-13 20:04:45,782 - email_service - INFO - ✅ Email enviado exitosamente
+2025-06-13 20:04:45,961 - email_service - INFO - ✅ Conexión SMTP cerrada
+2025-06-13 20:04:45,961 - email_service - INFO - ==================================================
+2025-06-13 20:04:45,961 - main - INFO - ✅ OTP enviado exitosamente a s.moyano@alumno.um.edu.ar
+2025-06-13 20:04:45,962 - main - INFO - ==================================================
+2025-06-13 20:05:11,059 - main - INFO - === INICIO DE SOLICITUD DE DESCARGA ===
+2025-06-13 20:05:11,060 - main - INFO - 📁 ID del archivo: 6
+2025-06-13 20:05:11,060 - main - INFO - 👤 Usuario: santi
+2025-06-13 20:05:11,060 - main - INFO - 📍 Geohash recibido: 63z7jt9
+2025-06-13 20:05:11,061 - main - INFO - 🔑 OTP recibido: 805354
+2025-06-13 20:05:11,065 - redis_service - INFO - ✅ OTP verificado y eliminado para archivo 6
+2025-06-13 20:05:11,066 - main - INFO - ✅ OTP verificado correctamente
+2025-06-13 20:05:11,066 - main - INFO - ✅ Geohash verificado correctamente
+2025-06-13 20:05:11,066 - main - INFO - === Búsqueda en S3 ===
+2025-06-13 20:05:11,067 - main - INFO - Buscando archivo en S3: 1/1_20250613_200413_encrypted__tmp_chequera-41004418-1-102-1443.pdf
+2025-06-13 20:05:11,067 - main - INFO - Bucket: geocrypt
+2025-06-13 20:05:11,067 - main - INFO - Intentando verificar existencia del archivo en S3...
+2025-06-13 20:05:11,392 - main - INFO - ✅ Archivo encontrado en S3
+2025-06-13 20:05:11,392 - main - INFO - Generando URL firmada para descarga...
+2025-06-13 20:05:11,398 - main - INFO - ✅ URL firmada generada exitosamente
+2025-06-13 20:05:11,403 - main - INFO - === FIN DE SOLICITUD DE DESCARGA ===

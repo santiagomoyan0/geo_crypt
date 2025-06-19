@@ -58,7 +58,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('📝 Registrando usuario...');
             const response = await register(credentials.username, credentials.email, credentials.password);
             await AsyncStorage.setItem('token', response.access_token);
-            setUser(response.user);
+            
+            // Fetch user data after successful registration
+            const userData = await getUserInfo();
+            setUser(userData);
+            
             console.log('✅ Usuario registrado exitosamente');
         } catch (error) {
             console.error('❌ Error al registrar usuario:', error);
